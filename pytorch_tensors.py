@@ -1,5 +1,8 @@
-# Can also import the common abbreviation "nn" for "Neural Networks"
+## Introduction to PyTorch Tensors
+
 import torch
+
+# Can also import the common abbreviation "nn" for "Neural Networks"
 from torch import nn
 import pandas as pd
 import numpy as np
