@@ -1,6 +1,7 @@
 ## Introduction to PyTorch Tensors
 
 import torch
+import time
 
 # Can also import the common abbreviation "nn" for "Neural Networks"
 from torch import nn
@@ -149,6 +150,48 @@ print(tensor)
 tensor = tensor - 10
 print(tensor)
 
-tensor2 = torch.tensor([5, 4, 3])
+tensor2 = torch.tensor([5, 4, 3], dtype=torch.float32)
 tensor = tensor2 * tensor
 print(tensor)
+
+#Matrix Multiplication (can use element wise or dot-product)
+# dot product is multiplying matching members and then sum
+
+#matrix multiplication via torch will be faster then python operation
+
+tensor = tensor.matmul(tensor2) # can also use @ sign but matmul is better
+
+print(tensor)
+print(tensor.shape)
+print(tensor2.shape)
+#Main rules for operations on large matrixes
+# 1. The **inner dimensions must match (3, 2) @ (3, 2) won't work but (2, 3) @ (3, 2) will
+# 2. The resulting matrix has the shape of the outer dimensions
+try:
+    tensor = tensor.matmul(tensor2)
+except:
+    print("Error due to mismatch of dimension")
+
+tensor1 = torch.tensor([[1, 2], [3, 4], [5, 6]])
+print(tensor1.shape)
+tensor2 = torch.tensor([[5, 6, 7], [8, 9, 10]])
+print(tensor2.shape)
+
+#new tensor has shape (3, 3)
+print(tensor1.mm(tensor2).shape) #mm is an alias for matmul
+           
+#Finding the mean, max, min and sum of tensors
+tensor1 = torch.arange(0, 100, 10)
+print(tensor1.shape)
+
+print(f"Sum: {torch.sum(tensor1)}")
+print(f"Minimum: {torch.min(tensor1)}")
+print(f"Maximum: {torch.max(tensor1)}")
+print(f"Avg: {torch.mean(x.type(torch.float32))}") # for avg need floats or longs
+
+#finding the positional mean and max(splicing)
+x = torch.arange(1, 100, 10)
+
+#argmin returns the index position of the minimum value
+print(x.argmin(), x[0])
+print(x.argmax(), x[9])
