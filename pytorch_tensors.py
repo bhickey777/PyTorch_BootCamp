@@ -119,3 +119,36 @@ print(float_16_tensor.dtype)
 # Inputs (Less Common): You would set requires_grad=True for input tensors only if 
 # you need to calculate gradients with respect to the input itself, 
 # which is less common in standard training scenarios. #
+
+#getting tensor attributes (mixing data types)
+int32_tensor = torch.tensor([3, 6, 9], dtype=torch.int32)
+print(float_32_tensor * int32_tensor)
+print(f"Device Type: {float_32_tensor.device}")
+print(f"Shape: {float_32_tensor.shape}")
+print(f"Grad: {float_32_tensor.requires_grad}")
+
+#manipulating tensors (operations)
+
+### Tensor Operations include:
+# 1. Addition
+# 2. Subtraction
+# 3. Multiplication
+# 4. Division
+# 5. Matrix Multiplication
+
+tensor = torch.tensor([1, 2, 3])
+tensor = tensor + 10
+print(tensor)
+
+tensor = tensor * 10
+print(tensor)
+
+tensor = tensor / 10
+print(tensor)
+
+tensor = tensor - 10
+print(tensor)
+
+tensor2 = torch.tensor([5, 4, 3])
+tensor = tensor2 * tensor
+print(tensor)
