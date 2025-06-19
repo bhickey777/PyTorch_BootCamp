@@ -94,3 +94,28 @@ print(zeros_like)
 
 torch.ones_like = torch.ones_like(existing_tensor)
 print(torch.ones_like)
+
+#tensor data-types
+float_32_tensor = torch.tensor([3.0, 6.0, 9.0], dtype=None, device=None, requires_grad=False)
+print(float_32_tensor.dtype)
+
+# change data type to float 
+float_16_tensor = float_32_tensor.type(torch.float16)
+print(float_16_tensor.dtype)
+
+#Tensor datatypes is one of the 3 big issues with deep learning(level of precision)
+# 1. Tensors not right datatype
+# 2. Tensors not right shape
+# 3. Tensors not on the right device
+
+# Examples of device parameters (in PyTorch):
+# "cpu": Specifies the CPU.
+# "cuda": Specifies the current GPU.
+# "cuda:0": Specifies a specific GPU (e.g., the first one)
+
+# When to Use requires_grad=True: (tracking of gradients)
+# Model Parameters: Typically, you set requires_grad=True for the weights and biases of 
+# your neural network layers as you want to learn these parameters during training.
+# Inputs (Less Common): You would set requires_grad=True for input tensors only if 
+# you need to calculate gradients with respect to the input itself, 
+# which is less common in standard training scenarios. #
