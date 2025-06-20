@@ -58,4 +58,27 @@ tensor = torch.ones(7)
 numpy_tensor = tensor.numpy()
 print(numpy_tensor.dtype)
 
+# tensor reproducability (being able to recreate tensors in a randon env)
+# start with random -> tensor ops -> update random set to make better data aligned with targets
+# to reduce randomness in pytorch you have concept of a ** random seed **
 
+RANDOM_SEED = 64
+
+try:
+    torch.manual_seed(RANDOM_SEED)
+    a = torch.rand(3, 5)
+    torch.manual_seed(RANDOM_SEED) #need to reset it each time ???
+    b = torch.rand(3, 5)
+finally: 
+    print(a == b)
+
+#different ways of accessing the device when running pytorch
+print(f"CUDA is available: {torch.cuda.is_available()}")
+print(f"CPU is available: {torch.cpu.is_available()}")
+
+#Setting up device agnostic code
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(device)
+
+#show the number of GPUs
+print(torch.cpu.device_count())
