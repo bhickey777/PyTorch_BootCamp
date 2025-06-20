@@ -244,3 +244,13 @@ print(z)
 
 z = torch.unsqueeze(x, dim=1)
 print(z)
+
+# returns a view of the original tensor often used with images
+x = torch.rand(size=(224, 224, 3)) # [height, width, color_channels (rgb)
+
+#switch the color channels
+z = x.permute(2, 0, 1)
+print(x.shape)
+print(z.shape)
+
+
