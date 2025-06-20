@@ -195,3 +195,52 @@ x = torch.arange(1, 100, 10)
 #argmin returns the index position of the minimum value
 print(x.argmin(), x[0])
 print(x.argmax(), x[9])
+
+x = torch.rand(2, 3, 4)
+print(x)
+print(f"Min index: {x.argmin()}")
+print(f"Max index: {x.argmax()}")
+
+#Reshaping Viewing Sqeezing UnSqueezing and Stacking Tensors
+# Reshaping - reshapes the input tensor to a defined shape
+# View - return a view of an input tensor of a certain shape but keep same memory
+# Stacking - combined multiple tensors on top of each other (vstack) or (hstack)
+# Squeeze - removes all 1 dimensions from a tensor
+# Unsqueeze - adds a 1 dimension to a tensor
+# Permute - return a vie wof the input with dimensions permuted (swapped) in a fashion
+
+x = torch.arange(1. , 12.)
+print(x)
+
+# Add an extra dimension
+x_reshaped = x.reshape(11, 1)
+print(x_reshaped)
+
+x_reshaped = x.reshape(1, 11)
+print(x_reshaped)
+
+#Change the view. when you change view you change the original tensor
+x_view = x.view(1, 11)
+print(x_view)
+x_view[:, 0] = 5
+print(x_view)
+print(x)
+
+#Stack tensors on top of each other
+y = torch.arange(1., 12.)
+z1 = torch.stack([x, y], dim=1) # takes a list of tensors 
+z2 = torch.stack([x, y], dim=0) # takes a list of tensors 
+print(z1)
+print(z2)
+
+z3 = torch.vstack([x, y]) #same as dim = 0
+print(z3)
+z4 = torch.hstack([x, y])
+print(z4)
+
+#Squeeze and Unsqueeze
+z = torch.squeeze(x)
+print(z)
+
+z = torch.unsqueeze(x, dim=1)
+print(z)
