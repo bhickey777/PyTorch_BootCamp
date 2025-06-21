@@ -1,13 +1,18 @@
-# pytorch workflow
+# pytorch workflow (setting up model plotting predictions)
 
 import torch
 from torch import nn ## pytorch neural networks
+from torch.utils.data import Dataset, DataLoader
+
 import numpy as np
 import matplotlib.pyplot as plt
 import time
 
 #Check pytorch version
 print(torch.__version__)
+
+RANDOM_SEED = 42
+torch.manual_seed(RANDOM_SEED)
 
 # 1. Preparing an loading
 # Can be images, videos, audio, podcasts, or texts
@@ -22,6 +27,9 @@ bias = 0.3 # b is the slope of the line
 start = 0
 end = 1
 step = 0.02
+
+# for complex datasets can use torch.utils.data.Dataset and torch.utils.data.DataLoader
+# rather then generating random numbers
 
 X = torch.arange(start, end, step).unsqueeze(dim = 1)
 print(X)
@@ -41,6 +49,28 @@ X_test, y_test = X[train_split:],y[train_split:]
 #Check the lengths of each set 
 print(len(X_train), len(y_train), len(X_test), len(y_test))
 
+#Build the model for predicting the linear regression values
+class LinearRegressionModel(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+        # can use random or torch.optim to optimize the data
+        self.weights = nn.Parameter(torch.randn(1,
+                                                requires_grad=True,
+                                                dtype=torch.float))
+        self.bias = nn.Parameter(torch.randn(1,
+                                             requires_grad=True,
+                                             dtype=torch.float))
+
+    # use the formula to provide the computation of the model
+    # ideally model will run random weights and bias and come close to value
+    # as prescribed by the linear regression formula
+    # forward is invoked by Module for each cell defined by the parameters
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.weights * x + self.bias
+    
 #make the training and test sets visual
 def plot_predictions(train_data=X_train,
                      train_labels=y_train,
@@ -63,5 +93,44 @@ def plot_predictions(train_data=X_train,
         plt.scatter(test_data, predictions, c="r", s=4, label="Predications")
 
     plt.legend(prop={"size": 14})
+    return plt
 
-plot_predictions();
+def showPlot(file_name, plt):
+
+    plt.savefig(file_name) 
+    plt.show()
+
+# plt = plot_predictions();
+# showPlot('linear regression.png', plt)
+
+#create a instance of your model
+model_0 = LinearRegressionModel()
+list_parms = list(model_0.parameters()) #this is the generator
+parm_names = model_0.state_dict()
+
+print(list_parms)
+print(parm_names)
+
+#based on our formula want the weights and bias to be (0.7, 0.3)
+
+#can make predictions using 'torch.inference_mode() 
+#predict 'y_test' based on 'x_test'
+
+with torch.inference_mode(): #inference mode keeps the context of the gradients
+    y_preds = model_0(X_test)
+    print(y_preds)
+    # compare to y_test
+    print(y_test)
+
+    plt = plot_predictions(predictions=y_preds);
+    showPlot('linear regression grad.png', plt)
+   
+with torch.no_grad(): #no gradients are used
+    y_preds = model_0(X_test)
+    print(y_preds)
+    # compare to y_test
+    print(y_test)
+
+    plt = plot_predictions(predictions=y_preds);
+    showPlot('linear regression nograd.png', plt)
+
