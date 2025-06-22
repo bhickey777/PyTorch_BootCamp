@@ -49,7 +49,7 @@ X_test, y_test = X[train_split:],y[train_split:]
 #Check the lengths of each set 
 print(len(X_train), len(y_train), len(X_test), len(y_test))
 
-#Build the model for predicting the linear regression values
+#3. Build the model for predicting the linear regression values
 class LinearRegressionModel(nn.Module):
 
     def __init__(self):
@@ -134,3 +134,22 @@ with torch.no_grad(): #no gradients are used
     plt = plot_predictions(predictions=y_preds);
     showPlot('linear regression nograd.png', plt)
 
+#4. How to train the model - move from some unknown to some known parameters
+#   You can use a loss function or criterion to measure the effectiveness of a model 
+
+#   Optimizer - takes into account the loss of a model and adjusts the models weights and bias 
+#   to improve the loss function. 
+
+#   Need a training and a testing loop in order to achieve this 
+
+    print(model_0.state_dict())
+
+    #Setup a loss function
+    loss_fn = nn.L1Loss()
+    print(loss_fn)
+    #Setup an optimizer
+    optimizer = torch.optim.SGD(
+        params = model_0.parameters(), 
+        lr=0.01, #learning rate is a hyperparameter (higher learning more adjustment)
+        momentum=0.9) #
+    
