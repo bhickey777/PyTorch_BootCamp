@@ -10,6 +10,10 @@ import time
 RANDOM_SEED = 42
 torch.manual_seed(RANDOM_SEED)
 
+epoch_count = []
+loss_values = []
+test_loss_values = []
+
 weight = 0.7 # a is the intercept or the value of y when x is zero
 bias = 0.3 # b is the slope of the line
 
@@ -80,7 +84,7 @@ def plot_predictions(train_data=X_train,
 def showPlot(file_name, plt):
 
     plt.savefig(file_name) 
-    plt.show()
+    plt.legend()
 
 #create a instance of your model
 model_0 = LinearRegressionModel()
@@ -131,16 +135,39 @@ for epoch in range(epochs):
     #5. Step the optimizer(perform gradient descent)
     optimizer.step()
 
-    #Turn off the gradient tracking
+    #Turns model out of training mode and allows model to be evaluated / tested
     model_0.eval()
 
     #Print out model state dict
     # print(model_0.state_dict())
 
-#Now with the model having been trained lets check with some test data
-with torch.inference_mode():
-    y_preds_new = model_0(X_test)
+    #Now with the model having been trained lets check with some test data
+    with torch.inference_mode(): # turns off gradient tracking 
 
-    plt = plot_predictions(predictions=y_preds_new);
-    showPlot('post testing model.png', plt)
+        # 1. do a forward pass thru the model
+        y_preds_new = model_0(X_test) 
 
+        #  2. Calculate the loss on the test data 
+        test_loss = loss_fn(y_preds_new, y_test)
+
+    if epoch % 10 == 0:
+        epoch_count.append(epoch)
+        loss_values.append(loss)
+        test_loss_values.append(test_loss)
+
+        print(f"Epoch: {epoch} | Loss: {loss} | Test Loss: {test_loss}")
+
+#plt = plot_predictions(predictions=y_preds_new);
+#showPlot('post testing model.png', plt)
+
+# need to convert tensors to numpy arrays
+np_loss_values = np.array(torch.tensor(loss_values).numpy())
+np_test_loss_values = np.array(torch.tensor(test_loss_values).numpy())
+
+plt.plot(epoch_count, np_loss_values, label="Loss Values")
+plt.plot(epoch_count, np_test_loss_values, label="Test Loss")
+plt.title("Training and test loss curves")
+plt.ylabel("Loss")
+plt.xlabel("Epochs")
+
+showPlot("train_test_loss.png", plt)
