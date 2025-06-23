@@ -15,6 +15,9 @@ epoch_count = []
 loss_values = []
 test_loss_values = []
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"using device {device}")
+
 weight = 0.7 # a is the intercept or the value of y when x is zero
 bias = 0.3 # b is the slope of the line
 
