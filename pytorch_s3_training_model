@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
+from pathlib import Path
 
 RANDOM_SEED = 42
 torch.manual_seed(RANDOM_SEED)
@@ -84,7 +85,7 @@ def plot_predictions(train_data=X_train,
 def showPlot(file_name, plt):
 
     plt.savefig(file_name) 
-    plt.legend()
+    plt.show()
 
 #create a instance of your model
 model_0 = LinearRegressionModel()
@@ -171,3 +172,34 @@ plt.ylabel("Loss")
 plt.xlabel("Epochs")
 
 showPlot("train_test_loss.png", plt)
+
+# Save the model to be ran later or shared
+# torch.save() torch.load() [serialize and deserialize python objects]
+# torch.nn.Module.load_state_dict() [holds the state of the model]
+MODEL_PATH = Path("models")
+MODEL_PATH.mkdir(parents=True, exist_ok=True)
+MODEL_NAME = "01_s3_062325.pth"
+MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
+
+print(f"Saving model to : {MODEL_SAVE_PATH}")
+torch.save(model_0.state_dict(), MODEL_SAVE_PATH)
+
+print(f"Loading model from : {MODEL_SAVE_PATH}")
+_modelState = torch.load(MODEL_SAVE_PATH)
+print(_modelState)
+
+loaded_model_0 = LinearRegressionModel()
+loaded_model_0.load_state_dict(_modelState)
+print(loaded_model_0.state_dict())
+
+#Make some predictions to ensure loaded model works
+loaded_model_0.eval()
+with torch.inference_mode():
+    loaded_model_preds = loaded_model_0(X_test)
+
+model_0.eval()
+with torch.inference_mode():
+    y_preds = model_0(X_test)
+
+#compare loaded predictions model with existing model
+print(y_preds == loaded_model_preds)
