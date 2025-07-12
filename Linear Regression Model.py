@@ -38,6 +38,34 @@ train_split = int(0.8 * len(X))
 X_train, y_train = X[:train_split], y[:train_split]
 X_test, y_test = X[train_split:],y[train_split:]
 
+def plot_predictions(train_data=X_train,
+                     train_labels=y_train,
+                     test_data=X_test,
+                     test_labels=y_test,
+                     predictions = None):
+    
+    # plot training data, test data, and compares predictions
+    #matplotlib scatter graph
+    plt.figure(figsize=(10, 7))
+
+    # plot the training data in blue
+    plt.scatter(train_data, train_labels, c="b", s=4, label = "Training Data") # color of blue
+
+    #plot the test data in green
+    plt.scatter(test_data, test_labels, c="g", s=4, label="Test Data")
+
+    if predictions is not None:
+        #plot the predications
+        plt.scatter(test_data, predictions, c="y", s=4, label="Predications")
+
+    plt.legend(prop={"size": 14})
+    return plt
+
+def showPlot(file_name, plt):
+
+    plt.savefig(file_name) 
+    plt.show()
+
 class LinearRegressionModelV2(nn.Module):
     def __init__(self):
         super().__init__()
@@ -96,6 +124,46 @@ for epoch in range(epochs):
         print(f"Epoch: {epoch} | Loss: {loss} | Test Loss: {test_loss}")
 
 
+#Turn the model back into eval mode
+model1.eval()
+#make predictions on the test date
+with torch.inference_mode():
+    y_preds = model1(X_test)
+    print(y_preds)
 
+    #check out the model predictions visually
+    plt = plot_predictions(predictions=y_preds);
+    showPlot('linear regression model.png', plt)
+        
+# Save the model to be ran later or shared
+# torch.save() torch.load() [serialize and deserialize python objects]
+# torch.nn.Module.load_state_dict() [holds the state of the model]
+MODEL_PATH = Path("models")
+MODEL_PATH.mkdir(parents=True, exist_ok=True)
+MODEL_NAME = "01_s1_071225.pth"
+MODEL_SAVE_PATH = MODEL_PATH / MODEL_NAME
+
+print(f"Saving model to : {MODEL_SAVE_PATH}")
+torch.save(model1.state_dict(), MODEL_SAVE_PATH)
+
+print(f"Loading model from : {MODEL_SAVE_PATH}")
+_modelState = torch.load(MODEL_SAVE_PATH)
+print(_modelState)
+
+loaded_model_0 = LinearRegressionModelV2()
+loaded_model_0.load_state_dict(_modelState)
+print(loaded_model_0.state_dict())
+
+#Make some predictions to ensure loaded model works
+loaded_model_0.eval()
+with torch.inference_mode():
+    loaded_model_preds = loaded_model_0(X_test)
+
+model1.eval()
+with torch.inference_mode():
+    y_preds = model1(X_test)
+
+#compare loaded predictions model with existing model
+print(y_preds == loaded_model_preds)
 
 
