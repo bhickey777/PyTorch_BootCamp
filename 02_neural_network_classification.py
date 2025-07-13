@@ -18,6 +18,10 @@ from pathlib import Path
 RANDOM_SEED = 42
 torch.manual_seed(RANDOM_SEED)
 
+#make the code device agnostic 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"using device {device}")
+
 ## Make 1000 samples
 n_samples = 1000
 
@@ -74,3 +78,58 @@ X_train, X_test, y_train, y_test = train_test_split(X,
 # Check the size of the train and test data
 print(X_test.size(), X_train.size())
 print(y_test.size(), y_train.size())
+
+## 2. Build the associated model
+## Will classify between the two types of circles
+
+class CircleModelV1(nn.Module):
+    def __init__(self):
+        super().__init__()
+        #Use nn.Linear() for model parameters
+        #Create 2 nn.linear layers capable of handling the shapes of our data
+        #takes in 2 features and upscales to 5
+        self.layer_1 = nn.Linear(in_features=2, out_features=5) 
+        self.layer_2 = nn.Linear(in_features=5, out_features=1)
+        
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x-> layer1->layer2->output
+        return self.layer_2(self.layer_1(x))
+
+#Calculate accuracy - out of 100 examples what percentage does out model get right
+def accuracy_fn(y_true, y_pred):
+    correct = torch.eq(y_true, y_pred).sum().item()
+    acc = (correct/len(y_pred)) * 100
+    return acc
+
+#Let's replicate the model using nn.Sequential
+#steps thru each layer in a sequential fashion
+model0 = nn.Sequential(
+    nn.Linear(in_features=2, out_features=5),
+    nn.Linear(in_features=5, out_features=1)
+).to(device)
+    
+model0.eval()
+
+with torch.inference_mode():
+    y_preds = model0(X_test.to(device))
+
+loss_fn = nn.BCEWithLogitsLoss()#uses sigmoid activation function
+#Setup an optimizer (ways to adjust the parameters)
+optimizer = torch.optim.SGD(
+        params = model0.parameters(), 
+        lr=0.01, #learning rate is a hyperparameter (higher learning more adjustment)
+        momentum=0.9) #
+
+epochs = 100
+for epoch in range(epochs):
+    model0.train()
+    y_preds = model0(X_train)
+    loss = loss_fn(y_preds, y_train)
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+
+
