@@ -13,7 +13,18 @@ import pandas as pd
 from sklearn.datasets import make_circles
 from sklearn.model_selection import train_test_split
 
+import requests
 from pathlib import Path
+
+#Download helper functions from Learn PyTorch repo if not already downloaded
+if Path("helper_functions.py").is_file():
+    print("helper_functions.py already exists, skipping download")
+else:
+    request = requests.get("https://raw.githubusercontent.com/mrdbourke/pytorch-deep-learning/refs/heads/main/helper_functions.py")    
+    with open("helper_function.py", "wb") as f:
+        f.write(request.content)
+
+from helper_function import plot_predictions, plot_decision_boundary
 
 RANDOM_SEED = 42
 torch.manual_seed(RANDOM_SEED)
@@ -142,7 +153,7 @@ optimizer = torch.optim.SGD(
         lr=0.01, #learning rate is a hyperparameter (higher learning more adjustment)
         momentum=0.9) #
 
-epochs = 100
+epochs = 1000
 for epoch in range(epochs):
     model0.train()
     y_logits = model0(X_train).squeeze()  #1
@@ -172,4 +183,12 @@ for epoch in range(epochs):
             print(f"Epoch: {epoch} | Loss: {loss1:.5f} | Acc: {acc:.2f}% | Test loss: {test_loss:.5f} | Test acc: {test_acc: .2f}%")
 
 
+plt.figure(figsize=(12, 6))
+plt.subplot(1, 2, 1)
+plt.title("Train")
+plot_decision_boundary(model0, X_train, y_train)
+plt.subplot(1, 2, 2)
+plt.title("Test")
+plot_decision_boundary(model0, X_test, y_test)
 
+# plt.show()
