@@ -18,6 +18,9 @@ from pathlib import Path
 RANDOM_SEED = 42
 torch.manual_seed(RANDOM_SEED)
 
+# Can use this when using CUDA
+torch.cuda.manual_seed(RANDOM_SEED)
+
 #make the code device agnostic 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"using device {device}")
@@ -79,6 +82,10 @@ X_train, X_test, y_train, y_test = train_test_split(X,
 print(X_test.size(), X_train.size())
 print(y_test.size(), y_train.size())
 
+#set the training and test data to the device
+X_train, y_train = X_train.to(device), y_train.to(device)
+X_test, y_test = X_test.to(device), y_test.to(device)
+
 ## 2. Build the associated model
 ## Will classify between the two types of circles
 
@@ -105,16 +112,30 @@ def accuracy_fn(y_true, y_pred):
 #Let's replicate the model using nn.Sequential
 #steps thru each layer in a sequential fashion
 model0 = nn.Sequential(
-    nn.Linear(in_features=2, out_features=5),
-    nn.Linear(in_features=5, out_features=1)
+    nn.Linear(in_features=2, out_features=5, bias=True),
+    nn.Linear(in_features=5, out_features=1, bias=True)
 ).to(device)
     
+#Our raw outputs for this model are logits. These need to be 
+#converted into prediction probabilities using a sigmoid function.
+#this then needs to be converted to 1s or 0x depending on their
+#values
+
+# doing a raw sigmoid function activation
 model0.eval()
-
 with torch.inference_mode():
-    y_preds = model0(X_test.to(device))
+    y_logits = model0(X_test.to(device))[:5]
+    y_pred_probs = torch.sigmoid(y_logits)
+    y_preds = torch.round(y_pred_probs)
+    # in full
+    y_pred_labels = torch.round(torch.sigmoid(model0(X_test.to(device))[:5]))
+    print(y_pred_labels)
 
-loss_fn = nn.BCEWithLogitsLoss()#uses sigmoid activation function
+## option(2) using a pytorch loss function and optimizer
+
+loss_fn1 = nn.BCEWithLogitsLoss()#uses sigmoid activation function
+loss_fn2 = nn.BCELoss()
+
 #Setup an optimizer (ways to adjust the parameters)
 optimizer = torch.optim.SGD(
         params = model0.parameters(), 
@@ -124,12 +145,31 @@ optimizer = torch.optim.SGD(
 epochs = 100
 for epoch in range(epochs):
     model0.train()
-    y_preds = model0(X_train)
-    loss = loss_fn(y_preds, y_train)
+    y_logits = model0(X_train).squeeze()  #1
+    y_pred = torch.round(torch.sigmoid(y_logits))
 
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+    # Calculate loss/accuracy
+
+    #loss function in this case expects raw logits
+    loss1 = loss_fn1(y_logits, y_train)      #2
+    #loss function in this case expects predictions
+    #loss2 = loss_fn2(torch.sigmoid(y_logits), y_train)
+
+    acc = accuracy_fn(y_true =y_train,y_pred=y_pred)
+    optimizer.zero_grad()                 #3
+    loss1.backward()                       #4
+    # loss2.backward()
+    optimizer.step()                      #5
+
+    model0.eval()
+    with torch.inference_mode():
+        test_logits = model0(X_test).squeeze() 
+        test_pred = torch.round(torch.sigmoid(test_logits))
+        test_loss = loss_fn1(test_logits, y_test)
+        test_acc = accuracy_fn(y_true=y_test, y_pred=test_pred)
+        # print out results
+        if epoch % 10 == 0:
+            print(f"Epoch: {epoch} | Loss: {loss1:.5f} | Acc: {acc:.2f}% | Test loss: {test_loss:.5f} | Test acc: {test_acc: .2f}%")
 
 
 
