@@ -84,10 +84,26 @@ y = torch.from_numpy(y).type(torch.float) # make them float32
 
 #split the training into training and test sets
 
-X_train, X_test, y_train, y_test = train_test_split(X, 
-                                                    y, 
-                                                    test_size=0.2, #20% of data will be test 
-                                                    random_state=42)
+# X_train, X_test, y_train, y_test = train_test_split(X, 
+#                                                    y, 
+#                                                    test_size=0.2, #20% of data will be test 
+#                                                     random_state=42)
+
+# Try the model with a linear dataset
+start = 0
+end = 1
+step = 0.02
+
+weight = 0.7 # a is the intercept or the value of y when x is zero
+bias = 0.3 # b is the slope of the line
+X = torch.arange(start, end, step).unsqueeze(dim=1)
+y = weight * X + bias #linear regression formula
+
+
+# 2. Split the data into training (60-80% of data) and test sets (10-20%)
+train_split = int(0.8 * len(X))
+X_train, y_train = X[:train_split], y[:train_split]
+X_test, y_test = X[train_split:],y[train_split:]
 
 # Check the size of the train and test data
 print(X_test.size(), X_train.size())
@@ -103,16 +119,14 @@ X_test, y_test = X_test.to(device), y_test.to(device)
 class CircleModelV1(nn.Module):
     def __init__(self):
         super().__init__()
-        #Use nn.Linear() for model parameters
-        #Create 2 nn.linear layers capable of handling the shapes of our data
-        #takes in 2 features and upscales to 5
-        self.layer_1 = nn.Linear(in_features=2, out_features=5) 
-        self.layer_2 = nn.Linear(in_features=5, out_features=1)
+        self.layer_1 = nn.Linear(in_features=1, out_features=10)
+        self.layer_2 = nn.Linear(in_features=10, out_features=10)
+        self.layer_3 = nn.Linear(in_features=10, out_features=1)
         
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x-> layer1->layer2->output
-        return self.layer_2(self.layer_1(x))
+        return self.layer_3(self.layer_2(self.layer_1(x)))
 
 #Calculate accuracy - out of 100 examples what percentage does out model get right
 def accuracy_fn(y_true, y_pred):
@@ -123,10 +137,13 @@ def accuracy_fn(y_true, y_pred):
 #Let's replicate the model using nn.Sequential
 #steps thru each layer in a sequential fashion
 model0 = nn.Sequential(
-    nn.Linear(in_features=2, out_features=5, bias=True),
-    nn.Linear(in_features=5, out_features=1, bias=True)
+    nn.Linear(in_features=1, out_features=10, bias=True),
+    nn.Linear(in_features=10, out_features=10, bias=True),
+    nn.Linear(in_features=10, out_features=1, bias=True)
 ).to(device)
     
+# model0=CircleModelV1().to(device)
+
 #Our raw outputs for this model are logits. These need to be 
 #converted into prediction probabilities using a sigmoid function.
 #this then needs to be converted to 1s or 0x depending on their
@@ -135,7 +152,7 @@ model0 = nn.Sequential(
 # doing a raw sigmoid function activation
 model0.eval()
 with torch.inference_mode():
-    y_logits = model0(X_test.to(device))[:5]
+    y_logits = model0(X_test.to(device))
     y_pred_probs = torch.sigmoid(y_logits)
     y_preds = torch.round(y_pred_probs)
     # in full
@@ -146,19 +163,22 @@ with torch.inference_mode():
 
 loss_fn1 = nn.BCEWithLogitsLoss()#uses sigmoid activation function
 loss_fn2 = nn.BCELoss()
+loss_fn1 = nn.L1Loss()
 
 #Setup an optimizer (ways to adjust the parameters)
 optimizer = torch.optim.SGD(
         params = model0.parameters(), 
-        lr=0.01, #learning rate is a hyperparameter (higher learning more adjustment)
+        lr=0.001, #learning rate is a hyperparameter (higher learning more adjustment)
         momentum=0.9) #
 
 epochs = 1000
 for epoch in range(epochs):
     model0.train()
-    y_logits = model0(X_train).squeeze()  #1
-    y_pred = torch.round(torch.sigmoid(y_logits))
+    # y_logits = model0(X_train).squeeze()  #1
+    # y_pred = torch.round(torch.sigmoid(y_logits))
 
+    #linear y_preds
+    y_logits = model0(X_train)
     # Calculate loss/accuracy
 
     #loss function in this case expects raw logits
@@ -166,7 +186,7 @@ for epoch in range(epochs):
     #loss function in this case expects predictions
     #loss2 = loss_fn2(torch.sigmoid(y_logits), y_train)
 
-    acc = accuracy_fn(y_true =y_train,y_pred=y_pred)
+    acc = accuracy_fn(y_true =y_train,y_pred=y_logits)
     optimizer.zero_grad()                 #3
     loss1.backward()                       #4
     # loss2.backward()
@@ -174,21 +194,34 @@ for epoch in range(epochs):
 
     model0.eval()
     with torch.inference_mode():
-        test_logits = model0(X_test).squeeze() 
-        test_pred = torch.round(torch.sigmoid(test_logits))
+        #test_logits = model0(X_test).squeeze() 
+        test_logits = model0(X_test)
+        #test_pred = torch.round(torch.sigmoid(test_logits))
         test_loss = loss_fn1(test_logits, y_test)
-        test_acc = accuracy_fn(y_true=y_test, y_pred=test_pred)
+        test_acc = accuracy_fn(y_true=y_test, y_pred=test_logits)
         # print out results
         if epoch % 10 == 0:
             print(f"Epoch: {epoch} | Loss: {loss1:.5f} | Acc: {acc:.2f}% | Test loss: {test_loss:.5f} | Test acc: {test_acc: .2f}%")
 
 
-plt.figure(figsize=(12, 6))
-plt.subplot(1, 2, 1)
-plt.title("Train")
-plot_decision_boundary(model0, X_train, y_train)
-plt.subplot(1, 2, 2)
-plt.title("Test")
-plot_decision_boundary(model0, X_test, y_test)
+plot_predictions(train_data=X_train,
+                       train_labels=y_train,
+                       test_data=X_test,
+                       test_labels=test_logits);
 
-# plt.show()
+#plt.figure(figsize=(12, 6))
+#plt.subplot(1, 2, 1)
+#plt.title("Train")
+#plot_decision_boundary(model0, X_train, y_train)
+#plt.subplot(1, 2, 2)
+#plt.title("Test")
+#plot_decision_boundary(model0, X_test, y_test)
+
+plt.show()
+
+##   5. Ways to improve the model (dealing directly with the model) - hyperparameters
+##. *Increase the number of hidden layers in the model
+##. *Increase the number of features in the model
+##. *Add more epochs or iterations thru the model
+##. *Change the Activation functions
+##. *Change the learning rate (watch for an exploding or vanishing gradient)
