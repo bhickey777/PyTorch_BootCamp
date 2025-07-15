@@ -16,6 +16,8 @@ from sklearn.model_selection import train_test_split
 import requests
 from pathlib import Path
 
+import dataset_function as df
+
 #Download helper functions from Learn PyTorch repo if not already downloaded
 if Path("helper_functions.py").is_file():
     print("helper_functions.py already exists, skipping download")
@@ -90,14 +92,9 @@ y = torch.from_numpy(y).type(torch.float) # make them float32
 #                                                     random_state=42)
 
 # Try the model with a linear dataset
-start = 0
-end = 1
-step = 0.02
-
-weight = 0.7 # a is the intercept or the value of y when x is zero
-bias = 0.3 # b is the slope of the line
-X = torch.arange(start, end, step).unsqueeze(dim=1)
-y = weight * X + bias #linear regression formula
+data = df.linearDataset()
+X = data[0]
+y = data[1]
 
 
 # 2. Split the data into training (60-80% of data) and test sets (10-20%)
