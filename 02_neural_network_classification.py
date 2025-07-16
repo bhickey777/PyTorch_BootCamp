@@ -222,3 +222,10 @@ plt.show()
 ##. *Add more epochs or iterations thru the model
 ##. *Change the Activation functions
 ##. *Change the learning rate (watch for an exploding or vanishing gradient)
+
+## Model in this case cannot use only linear layers as the data is curved and
+## in the form of circles. 
+
+### 6.1 Recreating non-linear data (red and blue circles) 
+
+#Make and plot data. 
