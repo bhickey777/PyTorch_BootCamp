@@ -1,0 +1,89 @@
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_blobs
+
+import torch
+import torch.nn as nn
+
+from sklearn.model_selection import train_test_split
+
+from helper_function import accuracy_fn
+from helper_function import plot_predictions, plot_decision_boundary
+
+
+RANDOM_SEED = 42
+NUM_CLASSES = 4
+NUM_FEATURES = 3
+torch.manual_seed(RANDOM_SEED)
+
+# Can use this when using CUDA
+torch.cuda.manual_seed(RANDOM_SEED)
+
+#make the code device agnostic 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using Device: {device}")
+
+# create a toy multi-class dataset
+
+n_samples = 1000
+X, y = make_blobs(n_samples,
+                n_features=NUM_FEATURES,
+                centers=NUM_CLASSES,
+                cluster_std=1.5,
+                random_state=RANDOM_SEED)
+
+X = torch.from_numpy(X).type(torch.float)
+y = torch.from_numpy(y).type(torch.float)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+#set the training and test data to the device
+X_train, y_train = X_train.to(device), y_train.to(device)
+X_test, y_test = X_test.to(device), y_test.to(device)
+
+print(X_train[:10])
+print(y_train[:10])
+
+plt.figure(figsize=(10, 7))
+plt.scatter(X[:, 0], X[:, 1], c=y,cmap=plt.cm.RdYlBu)
+# plt.show()
+
+class BlobModel(nn.Module):
+    def __init__(self, input_size, output_size=4, hidden_size=8):
+        super().__init__()
+        self.linear_layer_stack = nn.Sequential(
+            nn.Linear(in_features=input_size, out_features=hidden_size),
+            nn.ReLU(),
+            nn.Linear(in_features=hidden_size, out_features=hidden_size),
+            nn.ReLU(),
+            nn.Linear(in_features=hidden_size, out_features=output_size)
+        )
+
+    def forward(self, x):
+        return self.linear_layer_stack(x)
+
+model0 = BlobModel(input_size=NUM_FEATURES).to(device)
+
+loss = nn.CrossEntropyLoss()
+
+#Setup an optimizer (ways to adjust the parameters)
+optimizer = torch.optim.Adam(
+        params = model0.parameters(), 
+        lr=0.001)
+
+epochs = 1000
+for epoch in range(epochs):
+    model0.train()
+    y_pred = model0(X_train)
+    optimizer.zero_grad()                 #3
+    loss.backward()                       #4
+    optimizer.step()                      #5
+
+    model0.eval()
+    with torch.inference_mode():
+        test_logits = model0(X_test).squeeze()
+        test_pred = torch.round(torch.sigmoid(test_logits))
+        test_loss = loss_fn(test_logits, y_test)
+        test_acc = accuracy_fn(y_true=y_test, y_pred=test_pred)
+        # print out results
+        if epoch % 10 == 0:
+            print(f"Epoch: {epoch} | Loss: {loss:.5f} | Acc: {acc:.2f}% | Test loss: {test_loss:.5f} | Test acc: {test_acc: .2f}%")
